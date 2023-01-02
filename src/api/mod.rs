@@ -1,13 +1,37 @@
+mod comsep;
+
 use chrono::{DateTime, Utc};
 use reqwest::{Client, RequestBuilder, Response};
 use serde::Deserialize;
 use snafu::{ResultExt, Snafu};
 use url::Url;
 
+use comsep::ComSep;
+
 macro_rules! add_query_arg {
     ($arg:ident, $type:ty) => {
         pub fn $arg(mut self, $arg: $type) -> Self {
             self.req = self.req.query(&[(stringify!($arg), $arg)]);
+            self
+        }
+    };
+}
+
+macro_rules! add_comsep_query_arg {
+    ($arg:ident, $type:ty) => {
+        pub fn $arg(mut self, $arg: impl ComSep<$type>) -> Self {
+            let string = $arg.to_cs_string();
+            self.req = self.req.query(&[(stringify!($arg), string)]);
+            self
+        }
+    };
+}
+
+macro_rules! add_comsep_str_query_arg {
+    ($arg:ident) => {
+        pub fn $arg<'a>(mut self, $arg: impl ComSep<&'a str>) -> Self {
+            let string = $arg.to_cs_string();
+            self.req = self.req.query(&[(stringify!($arg), string)]);
             self
         }
     };
@@ -54,21 +78,21 @@ impl ListPostsRequest {
     add_query_arg!(per_page, usize);
     add_query_arg!(search, &str);
     add_query_arg!(after, DateTime<Utc>);
-    add_query_arg!(author, usize);
-    // TODO: author_exclude
+    add_comsep_query_arg!(author, usize);
+    add_comsep_query_arg!(author_exclude, usize);
     add_query_arg!(before, DateTime<Utc>);
-    // TODO: exclude
-    // TODO: include
+    add_comsep_query_arg!(exclude, usize);
+    add_comsep_query_arg!(include, usize);
     add_query_arg!(offset, usize);
     // TODO: order
     // TODO: orderby
-    // TODO: slug
+    add_comsep_str_query_arg!(slug);
     // TODO: status
     // TODO: tax_relation
-    // TODO: categories
-    // TODO: categories_exclude
-    // TODO: tags
-    // TODO: tags_exclude
+    add_comsep_query_arg!(categories, usize);
+    add_comsep_query_arg!(categories_exclude, usize);
+    add_comsep_query_arg!(tags, usize);
+    add_comsep_query_arg!(tags_exclude, usize);
     add_query_arg!(sticky, bool);
 
     add_send!(Vec<crate::data::Post>);
@@ -83,14 +107,14 @@ impl ListTagsRequest {
     add_query_arg!(page, usize);
     add_query_arg!(per_page, usize);
     add_query_arg!(search, String);
-    // TODO: exclude
-    // TODO: include
+    add_comsep_query_arg!(exclude, usize);
+    add_comsep_query_arg!(include, usize);
     add_query_arg!(offset, usize);
     // TODO: order
     // TODO: orderby
     add_query_arg!(hide_empty, bool);
-    // TODO: post
-    // TODO: slug
+    add_query_arg!(post, usize);
+    add_comsep_str_query_arg!(slug);
 
     add_send!(Vec<crate::data::Tag>);
 }
