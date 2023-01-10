@@ -68,6 +68,27 @@ fn graft_path<'a>(url: &Url, path: &'a str) -> Url {
     url
 }
 
+pub struct ListCategoriesRequest {
+    pub req: RequestBuilder,
+}
+
+impl ListCategoriesRequest {
+    // TODO: context
+    add_query_arg!(page, usize);
+    add_query_arg!(per_page, usize);
+    add_query_arg!(search, String);
+    add_comsep_query_arg!(exclude, usize);
+    add_comsep_query_arg!(include, usize);
+    add_query_arg!(offset, usize);
+    // TODO: order
+    // TODO: orderby
+    add_query_arg!(hide_empty, bool);
+    add_query_arg!(post, usize);
+    add_comsep_str_query_arg!(slug);
+
+    add_send!(Vec<crate::data::Category>);
+}
+
 pub struct ListPostsRequest {
     pub req: RequestBuilder,
 }
@@ -138,6 +159,12 @@ impl Wordpress {
             client,
             location,
         }
+    }
+
+    /// Retrieve a list of category objects
+    pub fn list_categories(&self) -> ListCategoriesRequest {
+        let target = graft_path(&self.location, "wp-json/wp/v2/categories");
+        ListCategoriesRequest { req: self.client.get(target) }
     }
 
     /// Retrieve a list of post objects
